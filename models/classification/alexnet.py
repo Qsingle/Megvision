@@ -76,7 +76,8 @@ def alexnet(pretrained=False, progress=True, **kwargs):
     """
     model = AlexNet(**kwargs)
     if pretrained:
-        pass
+        state_dict = mge.hub.load_serialized_obj_from_url(model_urls[arch])
+        model.load_state_dict(state_dict)
 
     return model
 

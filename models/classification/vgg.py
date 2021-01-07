@@ -104,7 +104,8 @@ def _vgg(pretrained=False, progress=True, cfg_arch="A", arch="vgg11",**kwargs):
     model = VGG(cfgs[cfg_arch],**kwargs)
 
     if pretrained:
-        pass
+        state_dict = mge.hub.load_serialized_obj_from_url(model_urls[arch])
+        model.load_state_dict(state_dict)
     return model
 
 def vgg11(pretrained=False, progress=True, **kwargs):

@@ -399,7 +399,8 @@ def _resnet(arch, block, blocks, pretrained=False, progress=True, **kwargs):
     '''
     model = ResNet(block, blocks,**kwargs)
     if pretrained:
-        pass
+        state_dict = mge.hub.load_serialized_obj_from_url(model_urls[arch])
+        model.load_state_dict(state_dict)
     return model
 
 def resnet18(pretrained=False, progress=True, **kwargs):

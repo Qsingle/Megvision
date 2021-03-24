@@ -1,23 +1,61 @@
 #-*- coding:utf-8 -*-
 #!/etc/env python
-'''
-   @Author:Zhongxi Qiu
-   @File: resnet.py
-   @Time: 2021-01-01 13:49:01
-   @Version:1.0
-'''
+# BSD 3-Clause License
+
+# Copyright (c) Soumith Chintala 2016,
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# ------------------------------------------------------------------------------
+# MegEngine is Licensed under the Apache License, Version 2.0 (the "License")
+#
+# Copyright (c) 2014-2020 Megvii Inc. All rights reserved.
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT ARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#
+# This file has been modified by Megvii ("Megvii Modifications").
+# All Megvii Modifications are Copyright (C) 2014-2019 Megvii Inc. All rights reserved.
+# ------------------------------------------------------------------------------
+
 
 import megengine as mge
 import megengine.module as M
 import megengine.functional as F
 
-from utils import SEModule,SplAtConv2d
+from .utils import SEModule,SplAtConv2d
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 
           'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 
           'wide_resnet50_2', 'wide_resnet101_2', 'seresnet18', 'seresnet34',
           'seresnet50', 'seresnet101', 'seresnet152', 'seresnext50_32x4d',
-          'seresnext101_32x8d', 'resnest50', 'resnest101', 'resnest200', 'resnet269'
+          'seresnext101_32x8d', 'resnest14',  'resnest26',
+           'resnest50', 'resnest101', 'resnest200', 'resnest269'
 ]
 
 model_urls = {
@@ -37,10 +75,12 @@ model_urls = {
     'seresnet152' : '',
     'seresnext50_32x4d' : '',
     'seresnext101_32x8d' : '',
+    'resnest14' : '',
+    'resnest26' : '',
     'resnest50' : '',
     'resnest101' : '',
     'resnest200' : '',
-    'resnet269' : ''
+    'resnest269' : ''
 }
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
@@ -70,7 +110,8 @@ class BasicBlock(M.Module):
     expansion = 1 #note that the expansion of basic block in resnet is 1
     
     def __init__(self, inplanes, outplanes, stride=1, dilation=1, groups=1, downsample=None,
-            base_width=64, norm_layer=None, se_module=None, radix=2, reduction=4, avd=False, avd_first=False):
+            base_width=64, norm_layer=None, se_module=None, radix=2, reduction=4,
+                 avd=False, avd_first=False, is_first=False):
         '''
             Implementation of the basic block.
             Args:
@@ -110,12 +151,12 @@ class BasicBlock(M.Module):
     def forward(self, x):
         identify = x
         
-
         net = self.relu(self.bn1(self.conv1(x)))
         net = self.bn2(self.conv2(net))
         if self.downsample is not None:
             identify = self.downsample(x)
-        
+        if self.se is not None:
+            net = net * self.se(net)
         net = identify + net #residual
         net = self.relu(net)
         return net
@@ -129,7 +170,8 @@ class Bottleneck(M.Module):
 
     expansion = 4 # the expansion of the bottleneck block in resnet is 4
     def __init__(self, inplanes, outplanes, stride=1, dilation=1, groups=1, downsample=None,
-            base_width=64, norm_layer=None, se_module=None, radix=2, reduction=4, avd=False, avd_first=False, is_first=False):
+            base_width=64, norm_layer=None, se_module=None, radix=2, reduction=4,
+                 avd=False, avd_first=False, is_first=False):
         '''
             Implementation of the basic block.
             Args:
@@ -163,7 +205,9 @@ class Bottleneck(M.Module):
         self.bn1 = norm_layer(width)
         #layer2
         if self.radix >= 1:
-            self.conv2 = SplAtConv2d(width, width, kernel_size=3, stride=stride, padding=dilation, dilation=dilation, groups=groups, radix=radix, reduction=reduction)
+            self.conv2 = SplAtConv2d(width, width, kernel_size=3, stride=stride, padding=dilation,
+                                     dilation=dilation, groups=groups, radix=radix, reduction=reduction,
+                                     norm_layer=norm_layer)
         else:
             self.conv2 = conv3x3(width, width, stride=stride, groups=groups, dilation=dilation)
             self.bn2 = norm_layer(width)
@@ -208,7 +252,7 @@ class Bottleneck(M.Module):
         
         #if semodule
         if self.se is not None:
-            net = self.se(net)
+            net = self.se(net) * net
         #if need downsample
         if self.downsample is not None:
             identify = self.downsample(x)
@@ -226,14 +270,16 @@ def get_layers(num_layers):
             "Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>
     '''
     blocks = []
-    if num_layers == 18:
+    if num_layers == 14:
+        blocks = [1, 1, 1, 1]
+    elif num_layers == 18 or num_layers == 26:
         blocks = [2, 2, 2, 2]
     elif num_layers == 34 or num_layers == 50:
         blocks = [3, 4, 6, 3]
     elif num_layers == 101:
         blocks = [3, 4, 23, 3]
     elif num_layers == 152:
-        blocks = [3, 4, 36, 3]
+        blocks = [3, 8, 36, 3]
     elif num_layers == 200:
         blocks = [3, 24, 36, 3]
     elif num_layers == 269:
@@ -296,7 +342,7 @@ class ResNet(M.Module):
 
         self.base_width = width_per_group
         self.multi_grids = multi_grids
-        self.inplanes = 64
+        self.inplanes =  stem_width*2 if light_head else 64
         self.groups = groups
         self.norm_layer = norm_layer
         self.avg_layer = avg_layer
@@ -319,10 +365,18 @@ class ResNet(M.Module):
         self.maxpool = M.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         #4 stage
-        self.layer1 = self._make_layer(block, 64, blocks[0], stride=strides[0], dilation=dilations[0], se_module=se_module, reduction=reduction, radix=radix, avd=avd, avd_first=avd_first)
-        self.layer2 = self._make_layer(block, 128, blocks[1], stride=strides[1], dilation=dilations[1], se_module=se_module, reduction=reduction, radix=radix, avd=avd, avd_first=avd_first)
-        self.layer3 = self._make_layer(block, 256, blocks[2], stride=strides[2], dilation=dilations[2], se_module=se_module, reduction=reduction, radix=radix, avd=avd, avd_first=avd_first)
-        self.layer4 = self._make_grid_layer(block, 512, blocks[3], stride=strides[3], dilation=dilations[3], se_module=se_module, reduction=reduction, radix=radix, avd=avd, avd_first=avd_first)
+        self.layer1 = self._make_layer(block, 64, blocks[0], stride=strides[0], dilation=dilations[0],
+                                       se_module=se_module, reduction=reduction, radix=radix,
+                                       avd=avd, avd_first=avd_first)
+        self.layer2 = self._make_layer(block, 128, blocks[1], stride=strides[1], dilation=dilations[1],
+                                       se_module=se_module, reduction=reduction, radix=radix,
+                                       avd=avd, avd_first=avd_first)
+        self.layer3 = self._make_layer(block, 256, blocks[2], stride=strides[2], dilation=dilations[2],
+                                       se_module=se_module, reduction=reduction, radix=radix,
+                                       avd=avd, avd_first=avd_first)
+        self.layer4 = self._make_grid_layer(block, 512, blocks[3], stride=strides[3], dilation=dilations[3],
+                                            se_module=se_module, reduction=reduction, radix=radix, avd=avd,
+                                            avd_first=avd_first)
 
         #classification part
         self.avgpool = M.AdaptiveAvgPool2d(1)
@@ -384,7 +438,8 @@ class ResNet(M.Module):
             se = se_module(self.inplanes, reduction, norm_layer=self.norm_layer)
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes, groups=self.groups, base_width=self.base_width,
-                    dilation=dilation, norm_layer=norm_layer, se_module=se, reduction=reduction, avd=avd, avd_first=avd_first))
+                    dilation=dilation, norm_layer=norm_layer, se_module=se, reduction=reduction,
+                    radix=radix, avd=avd, avd_first=avd_first))
         return M.Sequential(*layers)
     
     def _make_grid_layer(self, block, planes, blocks, stride=1, dilation=1, se_module=None, reduction=16, radix=0, avd=False, avd_first=False):
@@ -535,6 +590,7 @@ def resnext50_32x4d(pretrained=False, progress=True, **kwargs):
     """
     kwargs["groups"] = 32
     kwargs["width_per_group"] = 4
+    kwargs["radix"] = 0
     return _resnet("resnext50_32x4d", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
 
 def resnext101_32x8d(pretrained=False, progress=True, **kwargs):
@@ -548,7 +604,7 @@ def resnext101_32x8d(pretrained=False, progress=True, **kwargs):
     """
     kwargs["groups"] = 32
     kwargs["width_per_group"] = 8
-    return _resnet("resnext101_32x8d", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
+    return _resnet("resnext101_32x8d", Bottleneck, get_layers(101), pretrained, progress, **kwargs)
 
 def wide_resnet50_2(pretrained=False, progress=True, **kwargs):
     """
@@ -655,7 +711,43 @@ def seresnext101_32x8d(pretrained=False, progress=True, **kwargs):
     kwargs["groups"] = 32
     kwargs["width_per_group"] = 8
     kwargs["se_module"] = SEModule
-    return _resnet("seresnext101_32x8d", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
+    return _resnet("seresnext101_32x8d", Bottleneck, get_layers(101), pretrained, progress, **kwargs)
+
+def resnest14(pretrained=False, progress=True, **kwargs):
+    r"""
+    ReNeSt-14 model from
+    `"ResNeSt: Split-Attention Networks" <https://arxiv.org/pdf/2004.08955.pdf>`_
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    kwargs["radix"] = 2
+    kwargs["avd"] = True
+    kwargs["avg_layer"] = True
+    kwargs["avg_down"] = True
+    kwargs["multi_grids"] = [1]
+    kwargs["light_head"] = True
+    kwargs["reduction"] = 4
+    return _resnet("resnest14", Bottleneck, get_layers(14), pretrained, progress, **kwargs)
+
+def resnest26(pretrained=False, progress=True, **kwargs):
+    r"""
+    ReNeSt-26 model from
+    `"ResNeSt: Split-Attention Networks" <https://arxiv.org/pdf/2004.08955.pdf>`_
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    kwargs["radix"] = 2
+    kwargs["avd"] = True
+    kwargs["avg_layer"] = True
+    kwargs["avg_down"] = True
+    kwargs["multi_grids"] = [1] * 2
+    kwargs["light_head"] = True
+    kwargs["reduction"] = 4
+    return _resnet("resnest26", Bottleneck, get_layers(26), pretrained, progress, **kwargs)
 
 def resnest50(pretrained=False, progress=True, **kwargs):
     r"""
@@ -671,6 +763,8 @@ def resnest50(pretrained=False, progress=True, **kwargs):
     kwargs["avg_layer"] = True
     kwargs["avg_down"] = True
     kwargs["light_head"] = True
+    kwargs["stem_width"] = 32
+    kwargs["reduction"] = 4
     return _resnet("resnest50", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
 
 def resnest101(pretrained=False, progress=True, **kwargs):
@@ -687,6 +781,7 @@ def resnest101(pretrained=False, progress=True, **kwargs):
     kwargs["avg_layer"] = True
     kwargs["avg_down"] = True
     kwargs["light_head"] = True
+    kwargs["reduction"] = 4
     return _resnet("resnest101", Bottleneck, get_layers(101), pretrained, progress, **kwargs)
 
 def resnest200(pretrained=False, progress=True, **kwargs):
@@ -703,6 +798,7 @@ def resnest200(pretrained=False, progress=True, **kwargs):
     kwargs["avg_layer"] = True
     kwargs["avg_down"] = True
     kwargs["light_head"] = True
+    kwargs["reduction"] = 4
     return _resnet("resnest200", Bottleneck, get_layers(200), pretrained, progress, **kwargs)
 
 def resnest269(pretrained=False, progress=True, **kwargs):
@@ -720,8 +816,8 @@ def resnest269(pretrained=False, progress=True, **kwargs):
     kwargs["avg_down"] = True
     kwargs["multi_grids"] = [1] * 8
     kwargs["light_head"] = True
+    kwargs["reduction"] = 4
     return _resnet("resnest269", Bottleneck, get_layers(269), pretrained, progress, **kwargs)
-
 
 if __name__ == "__main__":
     model = resnest200()

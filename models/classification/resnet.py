@@ -1,5 +1,5 @@
-#-*- coding:utf-8 -*-
-#!/etc/env python
+# -*- coding:utf-8 -*-
+# !/etc/env python
 # BSD 3-Clause License
 
 # Copyright (c) Soumith Chintala 2016,
@@ -48,15 +48,15 @@ import megengine as mge
 import megengine.module as M
 import megengine.functional as F
 
-from .utils import SEModule,SplAtConv2d
+from utils import SEModule, SplAtConv2d
 
-__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 
-          'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 
-          'wide_resnet50_2', 'wide_resnet101_2', 'seresnet18', 'seresnet34',
-          'seresnet50', 'seresnet101', 'seresnet152', 'seresnext50_32x4d',
-          'seresnext101_32x8d', 'resnest14',  'resnest26',
+__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
+           'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
+           'wide_resnet50_2', 'wide_resnet101_2', 'seresnet18', 'seresnet34',
+           'seresnet50', 'seresnet101', 'seresnet152', 'seresnext50_32x4d',
+           'seresnext101_32x8d', 'resnest14', 'resnest26',
            'resnest50', 'resnest101', 'resnest200', 'resnest269'
-]
+           ]
 
 model_urls = {
     'resnet18': '',
@@ -68,20 +68,21 @@ model_urls = {
     'resnext101_32x8d': '',
     'wide_resnet50_2': '',
     'wide_resnet101_2': '',
-    'seresnet18' : '', 
-    'seresnet34' : '',
-    'seresnet50' : '', 
-    'seresnet101' : '', 
-    'seresnet152' : '',
-    'seresnext50_32x4d' : '',
-    'seresnext101_32x8d' : '',
-    'resnest14' : '',
-    'resnest26' : '',
-    'resnest50' : '',
-    'resnest101' : '',
-    'resnest200' : '',
-    'resnest269' : ''
+    'seresnet18': '',
+    'seresnet34': '',
+    'seresnet50': '',
+    'seresnet101': '',
+    'seresnet152': '',
+    'seresnext50_32x4d': '',
+    'seresnext101_32x8d': '',
+    'resnest14': '',
+    'resnest26': '',
+    'resnest50': '',
+    'resnest101': '',
+    'resnest200': '',
+    'resnest269': ''
 }
+
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
     '''
@@ -92,8 +93,9 @@ def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
             stride (int or tuple or list): the stride of the conv
             dilation (int): the dilation rate of the conv
     '''
-    return M.Conv2d(in_channels=in_planes, out_channels=out_planes, kernel_size=3, stride=stride, 
-                        padding=dilation, groups=groups, dilation=dilation, bias=False)
+    return M.Conv2d(in_channels=in_planes, out_channels=out_planes, kernel_size=3, stride=stride,
+                    padding=dilation, groups=groups, dilation=dilation, bias=False)
+
 
 def conv1x1(in_planes, out_planes, stride=1):
     '''
@@ -107,10 +109,10 @@ def conv1x1(in_planes, out_planes, stride=1):
 
 
 class BasicBlock(M.Module):
-    expansion = 1 #note that the expansion of basic block in resnet is 1
-    
+    expansion = 1  # note that the expansion of basic block in resnet is 1
+
     def __init__(self, inplanes, outplanes, stride=1, dilation=1, groups=1, downsample=None,
-            base_width=64, norm_layer=None, se_module=None, radix=2, reduction=4,
+                 base_width=64, norm_layer=None, se_module=None, radix=2, reduction=4,
                  avd=False, avd_first=False, is_first=False):
         '''
             Implementation of the basic block.
@@ -122,7 +124,7 @@ class BasicBlock(M.Module):
                 groups (int): the number of groups for the first conv3x3 layer
                 downsample (megendine.module.Module or None): if not None, will do the downsample for x
                 base_width (int): the basic width of the layer
-                norm_layer (None or megendine.module.Module): the normalization layer of the block, default is batch normalization 
+                norm_layer (None or megendine.module.Module): the normalization layer of the block, default is batch normalization
                 se_module (SEModule or None): the semodule from SENet
         '''
         super(BasicBlock, self).__init__()
@@ -132,34 +134,35 @@ class BasicBlock(M.Module):
             raise ValueError('BasicBlock only supports groups=1 and base_width=64')
         if dilation > 1:
             raise NotImplementedError("Dilation > 1 not supportes in BasicBlock")
-        #self.downsample  and self.conv1 layer will do the downsample of the input  both when stride != 1
-        #layer1
+        # self.downsample  and self.conv1 layer will do the downsample of the input  both when stride != 1
+        # layer1
         self.conv1 = conv3x3(inplanes, outplanes, stride=stride, dilation=dilation, groups=groups)
         self.bn1 = norm_layer(outplanes)
-        #activation layer
+        # activation layer
         self.relu = M.ReLU()
-        #layer2
+        # layer2
         self.conv2 = conv3x3(outplanes, outplanes)
         self.bn2 = norm_layer(outplanes)
-        #downsample layer
+        # downsample layer
         self.downsample = downsample
-        #semodule
+        # semodule
         self.se = se_module
 
         self.stride = stride
-    
+
     def forward(self, x):
         identify = x
-        
+
         net = self.relu(self.bn1(self.conv1(x)))
         net = self.bn2(self.conv2(net))
         if self.downsample is not None:
             identify = self.downsample(x)
         if self.se is not None:
             net = net * self.se(net)
-        net = identify + net #residual
+        net = identify + net  # residual
         net = self.relu(net)
         return net
+
 
 class Bottleneck(M.Module):
     # Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2)
@@ -168,9 +171,10 @@ class Bottleneck(M.Module):
     # This variant is also known as ResNet V1.5 and improves accuracy according to
     # https://ngc.nvidia.com/catalog/model-scripts/nvidia:resnet_50_v1_5_for_pytorch.
 
-    expansion = 4 # the expansion of the bottleneck block in resnet is 4
+    expansion = 4  # the expansion of the bottleneck block in resnet is 4
+
     def __init__(self, inplanes, outplanes, stride=1, dilation=1, groups=1, downsample=None,
-            base_width=64, norm_layer=None, se_module=None, radix=2, reduction=4,
+                 base_width=64, norm_layer=None, se_module=None, radix=2, reduction=4,
                  avd=False, avd_first=False, is_first=False):
         '''
             Implementation of the basic block.
@@ -188,7 +192,7 @@ class Bottleneck(M.Module):
                 reduction (int): the reduction factor
                 avd (bool): whether use the avd layer
                 avd_first (bool): whether use the avd layer befo conv2
-                is_first (bool): whether is the first block of the stage 
+                is_first (bool): whether is the first block of the stage
         '''
         super(Bottleneck, self).__init__()
         width = int((base_width / 64) * outplanes) * groups
@@ -198,12 +202,12 @@ class Bottleneck(M.Module):
         self.avd_first = avd_first
         if self.avd:
             self.avd_layer = M.AvgPool2d(3, stride, padding=1)
-            stride=1
+            stride = 1
         self.radix = radix
-        #layer1
+        # layer1
         self.conv1 = conv1x1(inplanes, width)
         self.bn1 = norm_layer(width)
-        #layer2
+        # layer2
         if self.radix >= 1:
             self.conv2 = SplAtConv2d(width, width, kernel_size=3, stride=stride, padding=dilation,
                                      dilation=dilation, groups=groups, radix=radix, reduction=reduction,
@@ -211,32 +215,32 @@ class Bottleneck(M.Module):
         else:
             self.conv2 = conv3x3(width, width, stride=stride, groups=groups, dilation=dilation)
             self.bn2 = norm_layer(width)
-        #layer3
-        self.conv3 = conv1x1(width, outplanes*self.expansion)
-        self.bn3 = norm_layer(outplanes*self.expansion)
+        # layer3
+        self.conv3 = conv1x1(width, outplanes * self.expansion)
+        self.bn3 = norm_layer(outplanes * self.expansion)
 
-        #activation layer
+        # activation layer
         self.relu = M.ReLU()
-        
-        #downsample layer
+
+        # downsample layer
         self.downsample = downsample
-        #se module
+        # se module
         self.se = se_module
 
-        #stride
+        # stride
         self.stride = stride
-    
+
     def forward(self, x):
         identify = x
 
-        #layer1 forward
+        # layer1 forward
         net = self.conv1(x)
         net = self.bn1(net)
         net = self.relu(net)
 
         if self.avd and self.avd_first:
             net = self.avd_layer(net)
-        #layer2 forward
+        # layer2 forward
         if self.radix > 1:
             net = self.conv2(net)
         else:
@@ -246,26 +250,27 @@ class Bottleneck(M.Module):
 
         if self.avd and not self.avd_first:
             net = self.avd_layer(net)
-        #layer3 forward
+        # layer3 forward
         net = self.conv3(net)
         net = self.bn3(net)
-        
-        #if semodule
+
+        # if semodule
         if self.se is not None:
             net = self.se(net) * net
-        #if need downsample
+        # if need downsample
         if self.downsample is not None:
             identify = self.downsample(x)
-        
-        net = net + identify #residual
+
+        net = net + identify  # residual
         net = self.relu(net)
         return net
+
 
 def get_layers(num_layers):
     '''
         Get the number of blocks for each stage in resnet
         Args:
-            num_layers (int): the number of layers for resnet 
+            num_layers (int): the number of layers for resnet
         Reference:
             "Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>
     '''
@@ -283,15 +288,19 @@ def get_layers(num_layers):
     elif num_layers == 200:
         blocks = [3, 24, 36, 3]
     elif num_layers == 269:
-        blocks = [3, 30 ,48, 8]
+        blocks = [3, 30, 48, 8]
     else:
         raise ValueError("Unknown number of layers {}".format(num_layers))
     return blocks
 
+
 class ResNet(M.Module):
-    def __init__(self,  block, blocks,in_ch=3, num_classes=1000, first_stride=2, light_head=False, zero_init_residual=False, 
-            groups=1, width_per_group=64, strides=[1, 2, 2, 2], dilations=[1, 1, 1, 1],multi_grids=[1, 1, 1], norm_layer=None, 
-            se_module=None, reduction=16, radix=0, avd=False, avd_first=False, avg_layer=False, avg_down=False, stem_width=64):
+    def __init__(self, block, blocks, in_ch=3, num_classes=1000, first_stride=2, light_head=False,
+                 zero_init_residual=False,
+                 groups=1, width_per_group=64, strides=[1, 2, 2, 2], dilations=[1, 1, 1, 1], multi_grids=[1, 1, 1],
+                 norm_layer=None,
+                 se_module=None, reduction=16, radix=0, avd=False, avd_first=False, avg_layer=False, avg_down=False,
+                 stem_width=64):
         '''
             Modified resnet according to https://ngc.nvidia.com/catalog/model-scripts/nvidia:resnet_50_v1_5_for_pytorch.
             Implementate  ResNet and the variation of ResNet.
@@ -326,23 +335,25 @@ class ResNet(M.Module):
         '''
         super(ResNet, self).__init__()
 
-        if len(dilations) != 4 :
+        if len(dilations) != 4:
             raise ValueError("The length of dilations must be 4, but got {}".format(len(dilations)))
-        
-        if len(strides) != 4 :
+
+        if len(strides) != 4:
             raise ValueError("The length of dilations must be 4, but got {}".format(len(strides)))
-        
+
         if len(multi_grids) > blocks[-1]:
             multi_grids = multi_grids[:blocks[-1]]
         elif len(multi_grids) < blocks[-1]:
-            raise ValueError("The length of multi_grids must greater than or equal the number of blocks for last stage , but got {}/{}".format(len(multi_grids), blocks[-1]))
-        
+            raise ValueError(
+                "The length of multi_grids must greater than or equal the number of blocks for last stage , but got {}/{}".format(
+                    len(multi_grids), blocks[-1]))
+
         if norm_layer is None:
             norm_layer = M.BatchNorm2d
 
         self.base_width = width_per_group
         self.multi_grids = multi_grids
-        self.inplanes =  stem_width*2 if light_head else 64
+        self.inplanes = stem_width * 2 if light_head else 64
         self.groups = groups
         self.norm_layer = norm_layer
         self.avg_layer = avg_layer
@@ -364,7 +375,7 @@ class ResNet(M.Module):
         self.relu = M.ReLU()
         self.maxpool = M.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        #4 stage
+        # 4 stage
         self.layer1 = self._make_layer(block, 64, blocks[0], stride=strides[0], dilation=dilations[0],
                                        se_module=se_module, reduction=reduction, radix=radix,
                                        avd=avd, avd_first=avd_first)
@@ -378,7 +389,7 @@ class ResNet(M.Module):
                                             se_module=se_module, reduction=reduction, radix=radix, avd=avd,
                                             avd_first=avd_first)
 
-        #classification part
+        # classification part
         self.avgpool = M.AdaptiveAvgPool2d(1)
         self.fc = M.Linear(self.inplanes, num_classes)
 
@@ -398,7 +409,8 @@ class ResNet(M.Module):
                 elif isinstance(m, BasicBlock):
                     M.init.zeros_(m.bn2.weight)
 
-    def _make_layer(self, block, planes, blocks, stride=1, dilation=1, se_module=None, reduction=16, radix=0, avd=False, avd_first=False):
+    def _make_layer(self, block, planes, blocks, stride=1, dilation=1, se_module=None, reduction=16, radix=0, avd=False,
+                    avd_first=False):
         '''
             Implementation of the stage in resnet.
             Args:
@@ -416,7 +428,7 @@ class ResNet(M.Module):
         downsample = None
         se = None
         if se_module is not None:
-            se = se_module(planes*block.expansion, reduction, norm_layer=self.norm_layer)
+            se = se_module(planes * block.expansion, reduction, norm_layer=self.norm_layer)
         if stride != 1 or self.inplanes != planes * block.expansion:
             down_layers = []
             down_stride = stride
@@ -427,22 +439,24 @@ class ResNet(M.Module):
                 else:
                     avg_layer = M.AvgPool2d(kernel_size=1, stride=1, padding=0)
                 down_layers.append(avg_layer)
-            down_layers += [conv1x1(self.inplanes, planes*block.expansion, down_stride), norm_layer(planes*block.expansion)]
-            downsample = M.Sequential(*down_layers)      
+            down_layers += [conv1x1(self.inplanes, planes * block.expansion, down_stride),
+                            norm_layer(planes * block.expansion)]
+            downsample = M.Sequential(*down_layers)
         layers = []
         layers.append(block(self.inplanes, planes, groups=self.groups, downsample=downsample, stride=stride,
-                            base_width=self.base_width, dilation=dilation, norm_layer=norm_layer, se_module=se, 
+                            base_width=self.base_width, dilation=dilation, norm_layer=norm_layer, se_module=se,
                             radix=radix, reduction=reduction, avd=avd, avd_first=avd_first, is_first=True))
         self.inplanes = planes * block.expansion
         if se_module is not None:
             se = se_module(self.inplanes, reduction, norm_layer=self.norm_layer)
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes, groups=self.groups, base_width=self.base_width,
-                    dilation=dilation, norm_layer=norm_layer, se_module=se, reduction=reduction,
-                    radix=radix, avd=avd, avd_first=avd_first))
+                                dilation=dilation, norm_layer=norm_layer, se_module=se, reduction=reduction,
+                                radix=radix, avd=avd, avd_first=avd_first))
         return M.Sequential(*layers)
-    
-    def _make_grid_layer(self, block, planes, blocks, stride=1, dilation=1, se_module=None, reduction=16, radix=0, avd=False, avd_first=False):
+
+    def _make_grid_layer(self, block, planes, blocks, stride=1, dilation=1, se_module=None, reduction=16, radix=0,
+                         avd=False, avd_first=False):
         '''
             Implementation of the Multi-grid Method in deeplabv3
             Args:
@@ -463,37 +477,38 @@ class ResNet(M.Module):
         downsample = None
         se = None
         if se_module is not None:
-            se = se_module(planes*block.expansion, reduction, norm_layer=self.norm_layer)
+            se = se_module(planes * block.expansion, reduction, norm_layer=self.norm_layer)
         if stride != 1 or self.inplanes != planes * block.expansion:
             down_layers = []
             if self.avg_layer:
                 if self.avg_down:
-                    stride=1
+                    stride = 1
                     avg_layer = M.AvgPool2d(kernel_size=stride, stride=stride, padding=0)
                 else:
                     avg_layer = M.AvgPool2d(kernel_size=1, stride=1, padding=0)
                 down_layers.append(avg_layer)
-            down_layers += [conv1x1(self.inplanes, planes*block.expansion, stride), norm_layer(planes*block.expansion)]
-            downsample = M.Sequential(*down_layers)      
+            down_layers += [conv1x1(self.inplanes, planes * block.expansion, stride),
+                            norm_layer(planes * block.expansion)]
+            downsample = M.Sequential(*down_layers)
         layers = []
         layers.append(block(self.inplanes, planes, groups=self.groups, stride=stride, downsample=downsample,
-                            base_width=self.base_width, dilation=dilation*self.multi_grids[0], norm_layer=norm_layer, 
+                            base_width=self.base_width, dilation=dilation * self.multi_grids[0], norm_layer=norm_layer,
                             se_module=se, radix=radix, avd=avd, avd_first=avd_first))
         self.inplanes = planes * block.expansion
         if se_module is not None:
             se = se_module(self.inplanes, reduction, norm_layer=self.norm_layer)
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes, groups=self.groups, base_width=self.base_width,
-                    dilation=dilation*self.multi_grids[i], norm_layer=norm_layer, se_module=se,
-                    radix=radix, avd=avd, avd_first=avd_first))
+                                dilation=dilation * self.multi_grids[i], norm_layer=norm_layer, se_module=se,
+                                radix=radix, avd=avd, avd_first=avd_first))
         return M.Sequential(*layers)
-    
+
     def _forward_impl(self, x):
         net = self.conv1(x)
         net = self.bn1(net)
         net = self.relu(net)
         net = self.maxpool(net)
-        
+
         net = self.layer1(net)
         net = self.layer2(net)
         net = self.layer3(net)
@@ -503,7 +518,7 @@ class ResNet(M.Module):
         net = F.flatten(net, 1)
         net = self.fc(net)
         return net
-    
+
     def forward(self, x):
         return self._forward_impl(x)
 
@@ -516,11 +531,12 @@ def _resnet(arch, block, blocks, pretrained=False, progress=True, **kwargs):
             pretrained (bool): if True, download and load the pretrained weights
             progress (bool): if True, display the download progress
     '''
-    model = ResNet(block, blocks,**kwargs)
+    model = ResNet(block, blocks, **kwargs)
     if pretrained:
         state_dict = mge.hub.load_serialized_obj_from_url(model_urls[arch])
         model.load_state_dict(state_dict)
     return model
+
 
 def resnet18(pretrained=False, progress=True, **kwargs):
     """ResNet-18 model from
@@ -530,8 +546,9 @@ def resnet18(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-   
+
     return _resnet("resnet18", BasicBlock, get_layers(18), pretrained, progress, **kwargs)
+
 
 def resnet34(pretrained=False, progress=True, **kwargs):
     """ResNet-34 model from
@@ -552,9 +569,8 @@ def resnet50(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-   
-    return _resnet("resnet50", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
 
+    return _resnet("resnet50", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
 
 
 def resnet101(pretrained=False, progress=True, **kwargs):
@@ -576,8 +592,9 @@ def resnet152(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-   
+
     return _resnet("resnet152", Bottleneck, get_layers(152), pretrained, progress, **kwargs)
+
 
 def resnext50_32x4d(pretrained=False, progress=True, **kwargs):
     r"""
@@ -593,6 +610,7 @@ def resnext50_32x4d(pretrained=False, progress=True, **kwargs):
     kwargs["radix"] = 0
     return _resnet("resnext50_32x4d", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
 
+
 def resnext101_32x8d(pretrained=False, progress=True, **kwargs):
     r"""
     ResNeXt-50 32x4d model from
@@ -606,6 +624,7 @@ def resnext101_32x8d(pretrained=False, progress=True, **kwargs):
     kwargs["width_per_group"] = 8
     return _resnet("resnext101_32x8d", Bottleneck, get_layers(101), pretrained, progress, **kwargs)
 
+
 def wide_resnet50_2(pretrained=False, progress=True, **kwargs):
     """
     Wide ResNet-50-2 model from
@@ -616,7 +635,8 @@ def wide_resnet50_2(pretrained=False, progress=True, **kwargs):
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     kwargs["width_per_group"] = 64 * 2
-    return _resnet("wide_resnet_50_2",Bottleneck, get_layers(50), pretrained, progress, **kwargs)
+    return _resnet("wide_resnet_50_2", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
+
 
 def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
     """
@@ -628,7 +648,8 @@ def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     kwargs["width_per_group"] = 64 * 2
-    return _resnet("wide_resnet_101_2",Bottleneck, get_layers(101), pretrained, progress, **kwargs)
+    return _resnet("wide_resnet_101_2", Bottleneck, get_layers(101), pretrained, progress, **kwargs)
+
 
 def seresnet18(pretrained=False, progress=True, **kwargs):
     """SEResNet-18 model from
@@ -641,6 +662,7 @@ def seresnet18(pretrained=False, progress=True, **kwargs):
     kwargs["se_module"] = SEModule
     return _resnet("seresnet18", BasicBlock, get_layers(18), pretrained, progress, **kwargs)
 
+
 def seresnet34(pretrained=False, progress=True, **kwargs):
     """SEResNet-34 model from
     `"Squeeze-and-Excitation Networks"<https://arxiv.org/abs/1709.01507>`_
@@ -651,6 +673,7 @@ def seresnet34(pretrained=False, progress=True, **kwargs):
     """
     kwargs["se_module"] = SEModule
     return _resnet("seresnet34", BasicBlock, get_layers(34), pretrained, progress, **kwargs)
+
 
 def seresnet50(pretrained=False, progress=True, **kwargs):
     """SEResNet-50 model from
@@ -663,6 +686,7 @@ def seresnet50(pretrained=False, progress=True, **kwargs):
     kwargs["se_module"] = SEModule
     return _resnet("seresnet50", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
 
+
 def seresnet101(pretrained=False, progress=True, **kwargs):
     """SEResNet-101 model from
     `"Squeeze-and-Excitation Networks"<https://arxiv.org/abs/1709.01507>`_
@@ -674,6 +698,7 @@ def seresnet101(pretrained=False, progress=True, **kwargs):
     kwargs["se_module"] = SEModule
     return _resnet("seresnet101", Bottleneck, get_layers(101), pretrained, progress, **kwargs)
 
+
 def seresnet152(pretrained=False, progress=True, **kwargs):
     """SEResNet-101 model from
     `"Squeeze-and-Excitation Networks"<https://arxiv.org/abs/1709.01507>`_
@@ -684,6 +709,7 @@ def seresnet152(pretrained=False, progress=True, **kwargs):
     """
     kwargs["se_module"] = SEModule
     return _resnet("seresnet152", Bottleneck, get_layers(152), pretrained, progress, **kwargs)
+
 
 def seresnext50_32x4d(pretrained=False, progress=True, **kwargs):
     r"""
@@ -699,6 +725,7 @@ def seresnext50_32x4d(pretrained=False, progress=True, **kwargs):
     kwargs["se_module"] = SEModule
     return _resnet("seresnext50_32x4d", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
 
+
 def seresnext101_32x8d(pretrained=False, progress=True, **kwargs):
     r"""
     SE-ResNeXt-101_32x8d model from
@@ -712,6 +739,7 @@ def seresnext101_32x8d(pretrained=False, progress=True, **kwargs):
     kwargs["width_per_group"] = 8
     kwargs["se_module"] = SEModule
     return _resnet("seresnext101_32x8d", Bottleneck, get_layers(101), pretrained, progress, **kwargs)
+
 
 def resnest14(pretrained=False, progress=True, **kwargs):
     r"""
@@ -731,6 +759,7 @@ def resnest14(pretrained=False, progress=True, **kwargs):
     kwargs["reduction"] = 4
     return _resnet("resnest14", Bottleneck, get_layers(14), pretrained, progress, **kwargs)
 
+
 def resnest26(pretrained=False, progress=True, **kwargs):
     r"""
     ReNeSt-26 model from
@@ -748,6 +777,7 @@ def resnest26(pretrained=False, progress=True, **kwargs):
     kwargs["light_head"] = True
     kwargs["reduction"] = 4
     return _resnet("resnest26", Bottleneck, get_layers(26), pretrained, progress, **kwargs)
+
 
 def resnest50(pretrained=False, progress=True, **kwargs):
     r"""
@@ -767,6 +797,7 @@ def resnest50(pretrained=False, progress=True, **kwargs):
     kwargs["reduction"] = 4
     return _resnet("resnest50", Bottleneck, get_layers(50), pretrained, progress, **kwargs)
 
+
 def resnest101(pretrained=False, progress=True, **kwargs):
     r"""
     ReNeSt-101 model from
@@ -783,6 +814,7 @@ def resnest101(pretrained=False, progress=True, **kwargs):
     kwargs["light_head"] = True
     kwargs["reduction"] = 4
     return _resnet("resnest101", Bottleneck, get_layers(101), pretrained, progress, **kwargs)
+
 
 def resnest200(pretrained=False, progress=True, **kwargs):
     r"""
@@ -801,6 +833,7 @@ def resnest200(pretrained=False, progress=True, **kwargs):
     kwargs["reduction"] = 4
     return _resnet("resnest200", Bottleneck, get_layers(200), pretrained, progress, **kwargs)
 
+
 def resnest269(pretrained=False, progress=True, **kwargs):
     r"""
     ReNeSt-269 model from
@@ -818,6 +851,7 @@ def resnest269(pretrained=False, progress=True, **kwargs):
     kwargs["light_head"] = True
     kwargs["reduction"] = 4
     return _resnet("resnest269", Bottleneck, get_layers(269), pretrained, progress, **kwargs)
+
 
 if __name__ == "__main__":
     model = resnest200()

@@ -48,7 +48,7 @@ import megengine as mge
 import megengine.module as M
 import megengine.functional as F
 
-from utils import SEModule, SplAtConv2d
+from .utils import SEModule, SplAtConv2d
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',

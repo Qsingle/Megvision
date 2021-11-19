@@ -113,6 +113,9 @@ class VGG(M.Module):
         x = F.flatten(x, 1)
         x = self.classifier(x)
         return x
+
+    def get_classifier(self):
+        return self.classifier
     
     def _init_weights(self):
         for m in self.modules():

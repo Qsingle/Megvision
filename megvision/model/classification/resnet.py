@@ -17,7 +17,7 @@ import megengine.module as M
 from megengine.module import init
 import megengine.functional as F
 
-from megvision.layers.layers import *
+from layers.layers import *
 
 from .build import BACKBONE_REGISTER
 
@@ -381,6 +381,9 @@ class ResNet(M.Module):
                     init.zeros_(m.bn3.weight)
                 elif isinstance(m, BasicBlock):
                     init.zeros_(m.bn2.weight)
+
+    def get_classifier(self):
+        return self.fc
 
     def _make_layer(self, block, planes, blocks, stride=1, dilation=1, se_module=None, reduction=16, radix=0, avd=False,
                     avd_first=False):

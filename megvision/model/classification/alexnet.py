@@ -98,7 +98,10 @@ class AlexNet(M.Module):
             M.ReLU(),
             M.Linear(4096, num_classes)
         )
-    
+
+    def get_classifier(self):
+        return self.classifier
+
     def forward(self, x):
         x = self.features(x)
         x = self.avgpool(x)

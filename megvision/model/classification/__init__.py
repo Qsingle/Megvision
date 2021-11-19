@@ -11,5 +11,6 @@
 from .resnet import *
 from .vgg import *
 from .alexnet import *
+from .espnets import *
 
 from .build import get_model

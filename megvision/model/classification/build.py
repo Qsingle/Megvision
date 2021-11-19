@@ -8,7 +8,7 @@
 @License :  (C)Copyright 2019-2021
 """
 
-from megvision.comm.register import Register
+from comm.register import Register
 
 BACKBONE_REGISTER = Register("BACKBONE")
 

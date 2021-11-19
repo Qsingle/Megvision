@@ -22,11 +22,11 @@ from .build import BACKBONE_REGISTER
 __all__ = ["EESP", "SESSP", "EspNetV2"]
 
 model_urls = {
-    "espnetv2_s_0_5" : "",
-    "espnetv2_s_1_0" : "",
-    "espnetv2_s_1_25" : "",
-    "espnetv2_s_1_5" : "",
-    "epsnetv2_s_2_0" : ""
+    "espnetv2_s_0_5" : "https://github.com/Qsingle/Megvision/releases/download/v1.0/espnetv2_s_0.5.pkl",
+    "espnetv2_s_1_0" : "https://github.com/Qsingle/Megvision/releases/download/v1.0/espnetv2_s_1.0.pkl",
+    "espnetv2_s_1_25" : "https://github.com/Qsingle/Megvision/releases/download/v1.0/espnetv2_s_1.25.pkl",
+    "espnetv2_s_1_5" : "https://github.com/Qsingle/Megvision/releases/download/v1.0/espnetv2_s_1.5.pkl",
+    "epsnetv2_s_2_0" : "https://github.com/Qsingle/Megvision/releases/download/v1.0/espnetv2_s_2.0.pkl"
 }
 
 class EESP(M.Module):

@@ -8,4 +8,5 @@
 @License :  (C)Copyright 2019-2021
 """
 
+from .segmentation import *
 from .classification import *

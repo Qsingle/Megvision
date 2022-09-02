@@ -7,27 +7,36 @@
 @Contact :  qiuzhongxi@163.com
 @License :  (C)Copyright 2019-2021
 """
+import numpy as np
 
 from .lr_scheduler import LRScheduler
 
 class PolyLRScheduler(LRScheduler):
-    def __init__(self, optimizer,  num_images, batch_size, epochs, gamma=0.9, start=-1):
+    def __init__(self, optimizer,  num_images, batch_size, epochs, gamma=0.9, start=-1, drop_last=False):
         super(PolyLRScheduler, self).__init__(optimizer, start)
-        self.total_iterations = (num_images) // batch_size * epochs
+        if num_images % batch_size == 0 or drop_last:
+            total_iterations = num_images // batch_size * epochs
+        else:
+            if not drop_last:
+                total_iterations = (num_images // batch_size + 1) * epochs
+        self.total_iterations = total_iterations
         self.gamma = gamma
         self.batch_size = batch_size
         self.num_images = num_images
         self.epochs = epochs
+        print("Initial learning rate set to:{}".format([group["initial_lr"] for group
+                                                        in self.optimizer.param_groups]))
 
     def get_lr(self):
-        return [group["initia_lr"] * ((1 - self.current_step /
-                                       self.total_iterations)**self.gamma) for group in
-                self.optimizer.param_groups]
+        def calc_lr(group):
+            lr = group["initial_lr"] * (1-self.current_step/self.total_iterations)**self.gamma
+            return lr
+        return [calc_lr(group) for group in self.optimizer.param_groups]
 
     def state_dict(self):
         return {
             key:value
-            for key,value in self.__dict__.items()
+            for key, value in self.__dict__.items()
             if key in ["total_iterations", "gamma", "current_step",
                        "batch_size", "num_images", "epochs"]
         }

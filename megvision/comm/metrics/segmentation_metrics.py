@@ -17,15 +17,19 @@ class SegmentationMetrcNumpy:
         self.reset()
 
     def reset(self):
-        self.matrix = np.zeros(shape=(self.num_classes, self.num_classes))
+        num_classes = 2 if self.num_classes == 1 else self.num_classes #only support num_classes > 2
+        self.matrix = np.zeros(shape=(num_classes, num_classes))
 
     def add_batch(self, output, target):
         output = np.array(output)
         target = np.array(target)
+        num_classes = self.num_classes if self.num_classes != 1 else 2
+        if self.num_classes == 1:
+            output = np.where(output >= 0.5, 1, 0)
         if output.ndim == 4:
             output = np.argmax(output, axis=1)
         # for i in range(len(output)):
-        self.matrix += compute_confusion_matrix_numpy(output, target, self.num_classes)
+        self.matrix += compute_confusion_matrix_numpy(output, target, num_classes)
 
 
     def evaluate(self):
@@ -39,6 +43,7 @@ class SegmentationMetrcNumpy:
         SP = TN / (TN + FP + 1e-9)
         IoU = TP / (TP + FN + FP + 1e-9)
         Dice = 2*TP / (2*TP+FN+FP + 1e-9)
+        GMean = np.sqrt(R*SP)
         mean_acc = np.nanmean(ACC)
         mAP = np.nanmean(P)
         mAR = np.nanmean(R)
@@ -46,6 +51,8 @@ class SegmentationMetrcNumpy:
         mIoU = np.nanmean(IoU)
         mDice = np.nanmean(Dice)
         results = {}
+        results["IoU"] = IoU
+        results["dice"] = Dice
         results["P"] = P
         results["R"] = R
         results["SP"] = SP
@@ -56,4 +63,5 @@ class SegmentationMetrcNumpy:
         results["mean_sp"] = mSP
         results["miou"] = mIoU
         results["mdice"] = mDice
+        results["gmean"] = GMean
         return results

@@ -44,6 +44,5 @@ class LRScheduler(metaclass=ABCMeta):
     def step(self):
         self.current_step += 1
         values = self.get_lr()
-
         for groups, lr in zip(self.optimizer.param_groups, values):
-            groups["lr"] = values
+            groups["lr"] = lr

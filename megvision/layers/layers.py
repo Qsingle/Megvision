@@ -16,24 +16,40 @@ from __future__ import division
 import megengine as mge
 import megengine.functional as F
 import megengine.module as M
-from megengine.functional.nn import _pair
+# from megengine.functional.nn import _pair
 
-__all__ = ["Conv2d", "SeparableConv2d", "Dropout2d", "SplAtConv2d", "SEModule"]
+from comm.tuple_functools import _pair
+
+__all__ = ["Conv2d", "SeparableConv2d", "Dropout2d", "SplAtConv2d", "SEModule", "AdaptiveAvgPool2d"]
 
 
+class AdaptiveAvgPool2d(M.Module):
+    def __init__(self, out_size):
+        super(AdaptiveAvgPool2d, self).__init__()
+        self.out_size = out_size
+
+    def forward(self, x):
+        return F.adaptive_avg_pool2d(x, self.out_size)
 
 class Conv2d(M.Module):
     def __init__(self, in_ch, out_ch, ksize=1, stride=1, padding=0,
                  bias=False, dilation=1, groups=1, norm_layer=M.BatchNorm2d,
-                 activation=M.ReLU(), gn_groups=32, **kwargs):
+                 activation=M.ReLU(), gn_groups=32, dropout=0.0, drop_block_size=0, **kwargs):
         super(Conv2d, self).__init__()
         ksize = _pair(ksize)
         stride = _pair(stride)
         padding = _pair(padding)
+
         self.conv = M.Conv2d(in_ch, out_ch, ksize, stride=stride,
                              padding=padding, dilation=dilation,
                              groups=groups, bias=bias, **kwargs
                              )
+        self.dropout = dropout
+        if dropout > 0.0:
+            if drop_block_size > 0:
+                self.drop_block = Dropout2d(dropout, kernel_size=drop_block_size)
+            else:
+                self.drop_block = M.Dropout(dropout)
         self.norm_layer = None
         if norm_layer is not None:
             if isinstance(norm_layer, M.GroupNorm):
@@ -45,6 +61,8 @@ class Conv2d(M.Module):
 
     def forward(self, x):
         net = self.conv(x)
+        if self.dropout > 0.0:
+            net = self.drop_block(net)
         if self.norm_layer is not None:
             net = self.norm_layer(net)
         if self.activation is not None:
@@ -90,9 +108,12 @@ class SeparableConv2d(M.Module):
 
 
 class Dropout2d(M.Module):
-    def __init__(self, drop_prob, kernel_size):
+    def __init__(self, drop_prob, kernel_size, gamma_scale:float=1.0,
+                 batch_wise:bool=False, with_noise:bool=False):
         '''
             Implementation of the 2d dropout.
+            References:
+                <https://arxiv.org/pdf/1810.12890.pdf>
             Args:
                 drop_prob (float): the drop out rate
                 kernel_size (int): the kernel size of zhe pooling
@@ -100,23 +121,34 @@ class Dropout2d(M.Module):
         super(Dropout2d, self).__init__()
         self.drop_prob = drop_prob
         self.kernel_size = kernel_size
+        self.gama_scale = gamma_scale
+        self.batch_wise = batch_wise
+        self.with_noise = with_noise
 
     def forward(self, x):
         if not self.training or self.drop_prob <= 0.0:
             return x
         _, c, h, w = x.shape
-        pad_h = max((self.kernel_size - 1), 0)
-        pad_w = max((self.kernel_size - 1), 0)
-        numel = c * h * w
-        gamma = self.drop_prob * (w * h) / (self.kernel_size ** 2) / (
-                    (w - self.kernel_size + 1) * (h - self.kernel_size + 1))
-        mask = mge.random.uniform(0, 1, size=(1, c, h, w))
-        mask[mask < gamma] = 1
-        mask[mask >= gamma] = 0
-        mask = F.max_pool2d(mask, [self.kernel_size, self.kernel_size], stride=1, padding=(pad_h // 2, pad_w // 2))
-        mask = 1 - mask
-        x1 = F.expand_dims(1.0 * numel / mask.sum(axis=0), axis=0)
-        y = F.matmul(F.matmul(x, mask), x1)
+        total_size = w*h
+        clipped_block_size = min(self.kernel_size, min(w, h))
+        gamma = self.gama_scale*self.drop_prob * total_size / clipped_block_size**2 / (
+            (w - self.kernel_size+1) * (h - self.kernel_size + 1)
+        )
+        if self.batch_wise:
+            block_mask = mge.random.uniform(size=(1, h, w, c))
+        else:
+            block_mask = mge.random.uniform(size=x.shape)
+        block_mask[block_mask < gamma] = 1
+        block_mask[block_mask >= gamma] = 0
+        block_mask = F.max_pool2d(mge.tensor(block_mask, dtype="float32"), kernel_size=int(clipped_block_size),
+                                  stride=1, padding=(int(clipped_block_size//2), int(clipped_block_size//2)))
+        if self.with_noise:
+            normal_noise = mge.random.normal(size=x.shape if not self.batch_wise else (1, c, h, w))
+            y = x * (1. - block_mask) + normal_noise*block_mask
+        else:
+            block_mask = 1 - block_mask
+            normalize_scale = (block_mask.size / F.add(block_mask.sum(), 1e-7))
+            y = x*block_mask*normalize_scale
         return y
 
 class rSoftmax(M.Module):
@@ -212,3 +244,8 @@ class SplAtConv2d(M.Module):
         else:
             out = atten*net
         return out
+
+
+if __name__ == "__main__":
+    x = mge.random.normal(size=(4, 3, 256, 256))
+    x = Dropout2d(drop_prob=0.18, kernel_size=7)(x)

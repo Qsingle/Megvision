@@ -12,6 +12,8 @@ class Register:
     def __repr__(self):
         text = self.__class__.__name__ + f"{self._name}_item_{self._obj_dict}"
         return text
+    def get_names(self):
+        return self._obj_dict.keys()
 
     @property
     def obj_dict(self):
@@ -24,7 +26,7 @@ class Register:
     def _register(self, fuc_module_name, obj):
         assert (fuc_module_name not in self._obj_dict.keys()), \
             f"object {fuc_module_name} is already registered in {self._name}"
-        self._obj_dict[fuc_module_name] = obj
+        self._obj_dict[fuc_module_name.lower()] = obj
 
     def register(self, obj=None):
         if obj is None:

@@ -149,7 +149,7 @@ class Bottleneck(M.Module):
                  base_width=64, norm_layer=None, se_module=None, radix=2, reduction=4,
                  avd=False, avd_first=False, is_first=False):
         '''
-            Implementation of the basic block.
+            Implementation of the bottleneck block.
             Args:
                 inplanes (int): the number of channels of input
                 outplanes (int): the number of channels of output (the number of kernels of conv layers)

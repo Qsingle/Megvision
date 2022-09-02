@@ -11,7 +11,7 @@
 import megengine.module as M
 import megengine.functional as F
 
-from layers import Conv2d, AdaptiveAvgPool2d
+from megvision.layers import Conv2d, AdaptiveAvgPool2d
 
 class PSPModule(M.Module):
     def __init__(self, in_ch, out_ch, sizes=(1, 2, 3, 6)):

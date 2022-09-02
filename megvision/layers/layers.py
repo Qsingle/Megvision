@@ -16,9 +16,8 @@ from __future__ import division
 import megengine as mge
 import megengine.functional as F
 import megengine.module as M
-# from megengine.functional.nn import _pair
 
-from comm.tuple_functools import _pair
+from megvision.comm.tuple_functools import _pair
 
 __all__ = ["Conv2d", "SeparableConv2d", "Dropout2d", "SplAtConv2d", "SEModule", "AdaptiveAvgPool2d"]
 

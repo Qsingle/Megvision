@@ -25,7 +25,7 @@ import cv2
 import os
 
 
-from comm.tuple_functools import _pair
+from megvision.comm.tuple_functools import _pair
 
 def get_paths(image_dir, mask_dir, image_suffix, mask_suffix):
     image_paths = glob.glob(os.path.join(image_dir, "*{}".format(image_suffix)))

@@ -24,7 +24,7 @@ import cv2
 import os
 
 
-from comm.tuple_functools import _pair
+from megvision.comm.tuple_functools import _pair
 
 
 class CityScapesDataset(Dataset):

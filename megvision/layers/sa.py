@@ -14,7 +14,7 @@ import megengine as mge
 import megengine.module as M
 import megengine.functional as F
 
-from layers import Conv2d
+from megvision.layers import Conv2d
 
 
 class SA(M.Module):

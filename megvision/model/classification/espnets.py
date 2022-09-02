@@ -16,7 +16,7 @@ import megengine.module as M
 from megengine.module import init
 import megengine.functional as F
 
-from layers import Conv2d, EESP, SESSP
+from megvision.layers import Conv2d, EESP, SESSP
 from .build import BACKBONE_REGISTER
 
 __all__ = ["EspNetV2", "espnetv2_s_0_5", "espnetv2_s_1_0",

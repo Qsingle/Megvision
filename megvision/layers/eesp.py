@@ -10,7 +10,7 @@
 import megengine.module as M
 import megengine.functional as F
 
-from layers import Conv2d
+from megvision.layers import Conv2d
 
 __all__ = ["EESP", "SESSP"]
 

@@ -17,7 +17,7 @@ import megengine.module as M
 from megengine.module import init
 import megengine.functional as F
 
-from layers.layers import *
+from megvision.layers.layers import *
 
 from .build import BACKBONE_REGISTER
 

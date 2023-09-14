@@ -16,7 +16,7 @@ out = model(x)
 print(out.shape)
 ```
 
-You can also 
+You can also see the file [iostar_train.py](./iostar_train.py) as a sample for training.
 
 ## Supported Model List
 

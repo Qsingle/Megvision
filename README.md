@@ -41,7 +41,7 @@ You can also
     + V3Plus:[Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation](https://arxiv.org/abs/1802.02611)
   + CE-Net:[CE-Net: Context Encoder Network for 2D Medical Image Segmentation](https://arxiv.org/pdf/1903.02740.pdf)
   + CS-Net: [CS2-Net: Deep learning segmentation of curvilinear structures in medical imaging](https://www.sciencedirect.com/science/article/pii/S1361841520302383)
-  + PFSeg: []
-  + DPT: []
-  + SAM: []
-    + Thanks for the MegEngine group to provide the [SAM]() implementation
+  + PFSeg: [Patch-free 3D Medical Image Segmentation Driven by Super-Resolution Technique and Self-Supervised Guidance](https://link.springer.com/chapter/10.1007/978-3-030-87193-2_13)
+  + DPT: [Vision Transformers for Dense Prediction](https://arxiv.org/abs/2103.13413)
+  + SAM: [Segment Anything](https://arxiv.org/abs/2304.02643)
+    + Thanks for the MegEngine group to provide the [MegEngine-SAM](https://github.com/MegEngine/MegEngine-SAM) implementation.

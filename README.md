@@ -1,9 +1,33 @@
 # Megvision
-Some models implemented by megengine
+The MegEngine vision of the models we used in our experiments, hope this repository can help with you.
 
+# Usage
 
+Sample to import the DPT based on the SAM.
+```python
+import megengine as mge
+from megvision.model.segmentation.dpt import DPT
+from megengine import random
 
-## Model List
+model = DPT(real_img_size=1024, arch="sam_vit_b", img_size=1024, checkpoint=None)
+model.eval()
+x = random.normal(size=(1, 3, 1024, 1024))
+out = model(x)
+print(out.shape)
+```
+
+You can also 
+
+## Supported Model List
+
++ ### Classification
+  + AlexNet: [One weird trick for parallelizing convolutional neural networks](https://arxiv.org/abs/1404.5997)
+  + VGGNet: [Very Deep Convolutional Networks For Large-Scale Image Recognition](https://arxiv.org/pdf/1409.1556.pdf)
+  + ResNets: [Deep Residual Learning for Image Recognition](https://arxiv.org/pdf/1512.03385.pdf)
+    + WideResNets: [Wide Residual Networks](https://arxiv.org/pdf/1605.07146.pdf)
+    + ResNeXt: [Aggregated Residual Transformation for Deep Neural Networks](https://arxiv.org/pdf/1611.05431.pdf)
+    + SENets: [Squeeze-and-Excitation Networks](https://arxiv.org/abs/1709.01507)
+    + ResNeSt: [ResNeSt: Split-Attention Networks](https://arxiv.org/pdf/2004.08955.pdf)
 
 + ### Segmentation:
 
@@ -17,3 +41,7 @@ Some models implemented by megengine
     + V3Plus:[Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation](https://arxiv.org/abs/1802.02611)
   + CE-Net:[CE-Net: Context Encoder Network for 2D Medical Image Segmentation](https://arxiv.org/pdf/1903.02740.pdf)
   + CS-Net: [CS2-Net: Deep learning segmentation of curvilinear structures in medical imaging](https://www.sciencedirect.com/science/article/pii/S1361841520302383)
+  + PFSeg: []
+  + DPT: []
+  + SAM: []
+    + Thanks for the MegEngine group to provide the [SAM]() implementation

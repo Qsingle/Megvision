@@ -20,7 +20,7 @@ class FSL(M.Module):
         Fine-grained semantic learning module
         Parameters
         ----------
-        seg_ch (int): numcer of channels for
+        seg_ch (int): numcer of channels for segmentation features
         sr_ch (int): number of channels for super-resolution
         """
         super(FSL, self).__init__()

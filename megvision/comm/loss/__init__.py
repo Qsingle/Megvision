@@ -8,3 +8,4 @@
 """
 from .feature_affine import FALoss
 from .ssim import SSIM,SSIMLoss
+from .dice import DiceLoss

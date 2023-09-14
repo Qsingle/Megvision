@@ -7,3 +7,5 @@
 @Contact :  qiuzhongxi@163.com
 @License :  (C)Copyright 2019-2021
 """
+
+from .loss import FALoss, SSIMLoss, DiceLoss

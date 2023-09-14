@@ -13,4 +13,5 @@ from .vgg import *
 from .alexnet import *
 from .espnets import *
 
+from .build import BACKBONE_REGISTER
 from .build import get_model
